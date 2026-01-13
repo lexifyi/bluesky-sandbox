@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "lib": ["ESNext"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "noEmit": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
     /* Linting */

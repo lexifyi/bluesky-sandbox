@@ -4,12 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^25.0.6",
     "prettier": "^3.7.4",
     "typescript": "~5.9.3"
   },
   "dependencies": {
     "@atproto/api": "^0.18.14",
-    "dotenv": "^17.2.3"
+    "@skyware/jetstream": "^0.2.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "morgan": "^1.10.1"
   }
 }

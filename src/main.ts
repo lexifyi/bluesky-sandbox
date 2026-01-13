@@ -1,115 +1,152 @@
 import "dotenv/config";
 
-import { AtpAgent } from "@atproto/api";
+import { Jetstream } from "@skyware/jetstream";
+import express from "express";
+import morgan from "morgan";
+import { actor } from "./actor.ts";
+import { agent } from "./agent.ts";
+import { listMaybeFollows } from "./maybeFollows.ts";
 
-const agent = new AtpAgent({
-  service: "https://bsky.social",
-});
+console.log("Logging in…");
 
 await agent.login({
   identifier: process.env.BSKY_IDENTIFIER || "",
   password: process.env.BSKY_PASSWORD || "",
 });
 
-interface Follower {
-  did: string;
-  handle: string;
+interface FeedEntry {
+  uri: string;
+  time: number;
 }
 
-let cursor: string | undefined;
-const followers = new Map<string, Follower>();
+let posts: FeedEntry[] = [];
 
-while (true) {
-  const res = await agent.getFollows({
-    actor: agent.did!,
-    limit: 100,
-    cursor,
+console.log("Loading followers…");
+
+await actor.follows.load();
+
+console.log("Getting list of maybe follows…");
+
+const wantedDids = await listMaybeFollows();
+const allowedDids = new Set(wantedDids);
+
+for (const follow of actor.follows.list) {
+  allowedDids.add(follow.did);
+}
+
+const jetstream = new Jetstream({
+  wantedDids,
+});
+
+jetstream.onCreate("app.bsky.feed.post", (ev) => {
+  const uri = `at://${ev.did}/${ev.commit.collection}/${ev.commit.rkey}`;
+  const time = ev.time_us;
+
+  if (ev.commit.record.reply?.root) {
+    const did = new URL(ev.commit.record.reply.root.uri).hostname;
+
+    if (!allowedDids.has(did)) {
+      console.log(`skipped reply ${uri} to ${did}'s thread`);
+      return;
+    }
+  }
+
+  console.log(`added ${uri}`);
+  posts.push({ uri, time });
+  posts.sort((a, b) => b.time - a.time);
+  posts.length = Math.min(posts.length, 100);
+});
+
+jetstream.onDelete("app.bsky.feed.post", (ev) => {
+  const uri = `at://${ev.did}/${ev.commit.collection}/${ev.commit.rkey}`;
+
+  for (let i = posts.length - 1; i >= 0; i--) {
+    if (posts[i].uri === uri) {
+      posts.splice(i, 1);
+    }
+  }
+});
+
+const FEED_GENERATOR_DID = "did:web:bsky.lexi.fyi";
+const FEED_GENERATOR_ENDPOINT = "https://bsky.lexi.fyi";
+const FEED_GENERATOR_URI =
+  "at://did:plc:ijjndvwrk7qwasgrvgujlnrm/app.bsky.feed.generator/hello-world";
+
+const app = express();
+const port = 9396;
+
+app.use(morgan("dev"));
+
+app.get("/.well-known/did.json", (req, res) => {
+  res.json({
+    "@context": ["https://www.w3.org/ns/did/v1"],
+    id: FEED_GENERATOR_DID,
+    service: [
+      {
+        id: "#bsky_fg",
+        serviceEndpoint: FEED_GENERATOR_ENDPOINT,
+        type: "BskyFeedGenerator",
+      },
+    ],
   });
+});
 
-  if (!res.success) {
-    console.error("some kind of error");
-    break;
-  }
-
-  for (const { handle, did } of res.data.follows) {
-    followers.set(did, { did, handle });
-  }
-
-  cursor = res.data.cursor;
-
-  if (!cursor) {
-    break;
-  }
-}
-
-interface Entry {
-  did: string;
-  handle: string;
-  count: number;
-}
-
-const entries = new Map<string, Entry>();
-const cutoff = new Date();
-
-cutoff.setMonth(cutoff.getMonth() - 2);
-cursor = undefined;
-
-for (const { did, handle } of followers.values()) {
-  entries.set(did, { did, handle, count: 0 });
-}
-
-while (true) {
-  const res = await agent.getActorLikes({
-    actor: agent.did!,
-    limit: 100,
-    cursor,
+app.get("/xrpc/app.bsky.feed.describeFeedGenerator", (req, res) => {
+  res.json({
+    did: FEED_GENERATOR_DID,
+    feeds: [
+      {
+        uri: FEED_GENERATOR_URI,
+      },
+    ],
   });
+});
 
-  if (!res.success) {
-    console.error("some kind of error");
-    break;
+app.get("/xrpc/app.bsky.feed.getFeedSkeleton", (req, res) => {
+  if (!isAuthorized(req)) {
+    res.sendStatus(403);
+    return;
   }
 
-  let newest = new Date(0);
+  const limit =
+    typeof req.query.limit === "string" ? parseInt(req.query.limit) : 50;
 
-  for (const { post, reason } of res.data.feed) {
-    if (reason) {
-      console.dir(reason);
-    }
-    const { did, handle } = post.author;
-    let entry = entries.get(did);
+  res.json({
+    feed: posts[Symbol.iterator]()
+      .take(limit)
+      .map((p) => ({ post: p.uri }))
+      .toArray(),
+  });
+});
 
-    const indexedAt = new Date(post.indexedAt);
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+  jetstream.start();
+  console.log("Jetstream started.");
+});
 
-    if (indexedAt.valueOf() > newest.valueOf()) {
-      newest = indexedAt;
-    }
+function isAuthorized(req: express.Request): boolean {
+  const auth = req.header("Authorization");
 
-    if (!entry) {
-      entries.set(did, (entry = { did, handle, count: 0 }));
-    }
-
-    entry.count++;
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return false;
   }
 
-  cursor = res.data.cursor;
+  const [_headerB64, claimsB64, _sigB64] = auth
+    .slice("Bearer ".length)
+    .split(".");
 
-  if (!cursor || newest.valueOf() < cutoff.valueOf()) {
-    break;
+  if (!claimsB64) {
+    return false;
   }
-}
 
-const sorted = entries
-  .values()
-  //.filter((e) => e.count < 6)
-  //.filter((e) => !followers.has(e.did))
-  .filter((e) => followers.has(e.did))
-  .toArray();
+  const claims = JSON.parse(
+    Buffer.from(claimsB64, "base64url").toString("utf8")
+  );
 
-sorted.sort((a, b) => a.count - b.count);
+  if (typeof claims !== "object" || !("iss" in claims)) {
+    return false;
+  }
 
-for (let i = 0; i < sorted.length && i < 25; i++) {
-  const { handle, count } = sorted[i];
-
-  console.log(`${i + 1}. ${handle} (${count})`);
+  return claims.iss === agent.did;
 }
