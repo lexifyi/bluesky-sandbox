@@ -11,7 +11,7 @@ export async function listMaybeFollows() {
   const entries = new Map<string, Entry>();
   const cutoff = new Date();
 
-  cutoff.setMonth(cutoff.getMonth() - 2);
+  cutoff.setMonth(cutoff.getMonth() - 1);
 
   for (const { did, handle } of actor.follows.list) {
     entries.set(did, { did, handle, count: 0 });
@@ -54,7 +54,7 @@ export async function listMaybeFollows() {
 
   const sorted = entries
     .values()
-    .filter((e) => e.count > 2)
+    .filter((e) => e.count > 1)
     .filter((e) => !actor.follows.containsDID(e.did))
     .toArray();
 
