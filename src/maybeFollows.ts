@@ -54,7 +54,7 @@ export async function listMaybeFollows() {
 
   const sorted = entries
     .values()
-    .filter((e) => e.count > 1)
+    .filter((e) => e.count > 4)
     .filter((e) => !actor.follows.containsDID(e.did))
     .toArray();
 

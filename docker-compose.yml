@@ -2,9 +2,16 @@ services:
   main:
     image: node
     entrypoint: ["/bin/bash", "-c"]
-    command: ["cd /app && node src/main.ts"]
+    command: ["cd /app && node src/helloWorldFeed.ts"]
     restart: unless-stopped
     ports:
       - 9396:9396
+    volumes:
+      - .:/app
+  active_time:
+    image: node
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["cd /app && node src/activeTime.ts | tee -a active.log"]
+    restart: unless-stopped
     volumes:
       - .:/app

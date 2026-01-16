@@ -17,7 +17,7 @@ export const actor = {
       return actor.follows.containsDID(did) && actor.followers.containsDID(did);
     },
 
-    [Symbol.iterator](): Iterator<ProfileView> {
+    [Symbol.iterator](): IteratorObject<ProfileView> {
       return followsList[Symbol.iterator]().filter((f) =>
         actor.followers.containsDID(f.did)
       );

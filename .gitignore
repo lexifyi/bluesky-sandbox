@@ -1,2 +1,4 @@
 /.env
+/active.bin
+/active.log
 /node_modules/
