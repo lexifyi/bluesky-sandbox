@@ -11,7 +11,7 @@ services:
   active_time:
     image: node
     entrypoint: ["/bin/bash", "-c"]
-    command: ["cd /app && node src/activeTime.ts | tee -a active.log"]
+    command: ["cd /app && node src/activeTime.ts | tee active.log"]
     restart: unless-stopped
     volumes:
       - .:/app
