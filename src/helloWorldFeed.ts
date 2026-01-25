@@ -3,9 +3,7 @@ import "dotenv/config";
 import { Jetstream } from "@skyware/jetstream";
 import express from "express";
 import morgan from "morgan";
-import { actor } from "./actor.ts";
 import { agent } from "./agent.ts";
-import { listMaybeFollows } from "./maybeFollows.ts";
 
 console.log("Logging in…");
 
@@ -21,18 +19,21 @@ interface FeedEntry {
 
 let posts: FeedEntry[] = [];
 
-console.log("Loading followers…");
-
-await actor.follows.load();
-
-console.log("Getting list of maybe follows…");
-
-const wantedDids = await listMaybeFollows();
+const wantedDids = [
+  "did:plc:4kq7btfhe2trctdusevisyxl",
+  "did:plc:d5vcfslnbof6iscg6bkioloa",
+  "did:plc:qhdklf2jclke2fboszi72v2u",
+  "did:plc:nzdohiyi6kj7z4cenc75h7sd",
+  "did:plc:tfpssovy4db6fmvschveeyzb",
+  "did:plc:s7im66dmkz46mgisxpf5vlas",
+  "did:plc:ks5e3y523ywku5rmivnpbj4y",
+  "did:plc:f7tzucxlil2hedwqswlrwit3",
+  "did:plc:reo7ah66nruqpfb3expeqsfk",
+  "did:plc:2hdfgg2dq3uvkgga2em74fma",
+  "did:plc:7r46wb2sdsmtieu7asxr2rsp",
+  "did:plc:kxtykpybx2osastkudntrj6v",
+];
 const allowedDids = new Set(wantedDids);
-
-for (const follow of actor.follows.list) {
-  allowedDids.add(follow.did);
-}
 
 const jetstream = new Jetstream({
   wantedDids,
@@ -42,14 +43,14 @@ jetstream.onCreate("app.bsky.feed.post", (ev) => {
   const uri = `at://${ev.did}/${ev.commit.collection}/${ev.commit.rkey}`;
   const time = ev.time_us;
 
-  if (ev.commit.record.reply?.root) {
-    const did = new URL(ev.commit.record.reply.root.uri).hostname;
+  // if (ev.commit.record.reply?.root) {
+  //   const did = new URL(ev.commit.record.reply.root.uri).hostname;
 
-    if (!allowedDids.has(did)) {
-      console.log(`skipped reply ${uri} to ${did}'s thread`);
-      return;
-    }
-  }
+  //   if (!allowedDids.has(did)) {
+  //     console.log(`skipped reply ${uri} to ${did}'s thread`);
+  //     return;
+  //   }
+  // }
 
   console.log(`added ${uri}`);
   posts.push({ uri, time });
@@ -141,7 +142,7 @@ function isAuthorized(req: express.Request): boolean {
   }
 
   const claims = JSON.parse(
-    Buffer.from(claimsB64, "base64url").toString("utf8")
+    Buffer.from(claimsB64, "base64url").toString("utf8"),
   );
 
   if (typeof claims !== "object" || !("iss" in claims)) {
