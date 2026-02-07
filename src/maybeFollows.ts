@@ -1,64 +1,73 @@
+import "dotenv/config";
+
 import { actor } from "./actor.ts";
 import { agent } from "./agent.ts";
 
-export async function listMaybeFollows() {
-  interface Entry {
-    did: string;
-    handle: string;
-    count: number;
-  }
+interface Entry {
+  did: string;
+  handle: string;
+  count: number;
+}
 
-  const entries = new Map<string, Entry>();
-  const cutoff = new Date();
+await agent.login({
+  identifier: process.env.BSKY_IDENTIFIER || "",
+  password: process.env.BSKY_PASSWORD || "",
+});
 
-  cutoff.setDate(cutoff.getDate() - 21);
+await actor.follows.load();
 
-  for (const { did, handle } of actor.follows.list) {
-    entries.set(did, { did, handle, count: 0 });
-  }
+const entries = new Map<string, Entry>();
+const cutoff = new Date();
 
-  let cursor: string | undefined;
+cutoff.setDate(cutoff.getDate() - 21);
 
-  do {
-    const res = await agent.getActorLikes({
-      actor: agent.did!,
-      limit: 100,
-      cursor,
-    });
+for (const { did, handle } of actor.follows.list) {
+  entries.set(did, { did, handle, count: 0 });
+}
 
-    let newest = cutoff;
+let cursor: string | undefined;
 
-    for (const { post } of res.data.feed) {
-      const { did, handle } = post.author;
-      let entry = entries.get(did);
+do {
+  const res = await agent.getActorLikes({
+    actor: agent.did!,
+    limit: 100,
+    cursor,
+  });
 
-      const indexedAt = new Date(post.indexedAt);
+  let newest = cutoff;
 
-      if (indexedAt > newest) {
-        newest = indexedAt;
-      }
+  for (const { post } of res.data.feed) {
+    const { did, handle } = post.author;
+    let entry = entries.get(did);
 
-      if (!entry) {
-        entries.set(did, (entry = { did, handle, count: 0 }));
-      }
+    const indexedAt = new Date(post.indexedAt);
 
-      entry.count++;
+    if (indexedAt > newest) {
+      newest = indexedAt;
     }
 
-    if (newest <= cutoff) {
-      break;
+    if (!entry) {
+      entries.set(did, (entry = { did, handle, count: 0 }));
     }
 
-    cursor = res.data.cursor;
-  } while (cursor);
+    entry.count++;
+  }
 
-  const sorted = entries
-    .values()
-    .filter((e) => e.count > 1)
-    .filter((e) => !actor.follows.containsDID(e.did))
-    .toArray();
+  if (newest <= cutoff) {
+    break;
+  }
 
-  sorted.sort((a, b) => b.count - a.count);
+  cursor = res.data.cursor;
+} while (cursor);
 
-  return sorted.map((e) => e.did);
+const sorted = entries
+  .values()
+  .filter((e) => e.count > 1)
+  .filter((e) => !actor.follows.containsDID(e.did))
+  .toArray();
+
+sorted.sort((a, b) => b.count - a.count);
+
+for (const { did, handle, count } of sorted.slice(0, 40)) {
+  console.log(`Add? ${handle} ${did} x${count}`);
 }

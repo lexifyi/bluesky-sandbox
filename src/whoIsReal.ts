@@ -16,17 +16,28 @@ for (const mutual of actor.mutuals) {
   map.set(mutual.did, 0);
 }
 
-let limit = 50;
 let cursor: string | undefined;
+const cutoff = new Date();
 
-do {
+cutoff.setDate(cutoff.getDate() - 21);
+
+pagination: do {
   const { data: posts } = await agent.getAuthorFeed({
     actor: agent.did!,
     cursor,
-    filter: "posts_no_replies",
+    filter: "posts_with_replies",
+    includePins: false,
   });
 
-  for (const { post } of posts.feed) {
+  for (const { post, reason } of posts.feed) {
+    if (reason) {
+      continue;
+    }
+
+    if (new Date(post.indexedAt) < cutoff) {
+      break pagination;
+    }
+
     const { data: likes } = await agent.getLikes({ uri: post.uri });
 
     console.log(".");
@@ -36,13 +47,7 @@ do {
 
       map.set(like.actor.did, entry + 1);
     }
-
-    limit--;
-
-    if (limit === 0) break;
   }
-
-  if (limit === 0) break;
 
   cursor = posts.cursor;
 } while (cursor);
@@ -58,7 +63,7 @@ for (const mutual of actor.mutuals) {
 for (const follower of actor.followers.list) {
   const count = map.get(follower.did) ?? 0;
 
-  if (count > 0 && !actor.follows.containsDID(follower.did)) {
+  if (count > 1 && !actor.follows.containsDID(follower.did)) {
     console.log(`Add? ${follower.displayName} @${follower.handle} x${count}`);
   }
 }
