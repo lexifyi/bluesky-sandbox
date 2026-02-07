@@ -19,7 +19,7 @@ export const actor = {
 
     [Symbol.iterator](): IteratorObject<ProfileView> {
       return followsList[Symbol.iterator]().filter((f) =>
-        actor.followers.containsDID(f.did)
+        actor.followers.containsDID(f.did),
       );
     },
   },
@@ -74,9 +74,9 @@ export const actor = {
           cursor,
         });
 
-        for (const followers of res.data.followers) {
-          followerDIDs.add(followers.did);
-          followersList.push(followers);
+        for (const follower of res.data.followers) {
+          followerDIDs.add(follower.did);
+          followersList.push(follower);
         }
 
         cursor = res.data.cursor;

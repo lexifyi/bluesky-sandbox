@@ -19,7 +19,7 @@ for (const mutual of actor.mutuals) {
 let cursor: string | undefined;
 const cutoff = new Date();
 
-cutoff.setDate(cutoff.getDate() - 21);
+cutoff.setDate(cutoff.getDate() - 15);
 
 pagination: do {
   const { data: posts } = await agent.getAuthorFeed({

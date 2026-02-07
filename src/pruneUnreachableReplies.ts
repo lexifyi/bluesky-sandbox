@@ -9,6 +9,9 @@ await agent.login({
 
 let cursor: string | undefined;
 let count = 0;
+const cutoff = new Date();
+
+cutoff.setUTCDate(cutoff.getUTCDate() - 15);
 
 do {
   const { data } = await agent.getAuthorFeed({
@@ -19,10 +22,21 @@ do {
     filter: "posts_with_replies",
   });
 
+  if (data.feed.length === 0) {
+    break;
+  }
+
   for (const { post, reply } of data.feed) {
-    if (reply && reply.root.$type !== "app.bsky.feed.defs#postView") {
+    if (!reply || new Date(post.indexedAt) > cutoff) {
+      continue;
+    }
+
+    if (
+      reply.root.$type !== "app.bsky.feed.defs#postView" ||
+      reply.parent.$type !== "app.bsky.feed.defs#postView"
+    ) {
+      console.log(`Deletìng reply ${JSON.stringify(post.record.text)}`);
       await agent.deletePost(post.uri);
-      console.log(`Deleted ${post.cid}`);
     }
   }
 
