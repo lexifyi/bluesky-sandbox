@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { agent } from "./agent.ts";
+import { agent } from "./lib/agent.ts";
 
 await agent.login({
   identifier: process.env.BSKY_IDENTIFIER || "",

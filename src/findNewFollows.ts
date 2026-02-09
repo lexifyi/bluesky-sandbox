@@ -1,7 +1,7 @@
 import "dotenv/config";
 
-import { actor } from "./actor.ts";
-import { agent } from "./agent.ts";
+import { actor } from "./lib/actor.ts";
+import { agent } from "./lib/agent.ts";
 
 interface Entry {
   did: string;

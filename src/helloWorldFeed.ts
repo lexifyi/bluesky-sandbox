@@ -3,7 +3,7 @@ import "dotenv/config";
 import { Jetstream } from "@skyware/jetstream";
 import express from "express";
 import morgan from "morgan";
-import { agent } from "./agent.ts";
+import { agent } from "./lib/agent.ts";
 
 console.log("Logging in…");
 

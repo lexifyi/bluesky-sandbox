@@ -1,8 +1,8 @@
 import "dotenv/config";
 
 import type { PostView } from "@atproto/api/dist/client/types/app/bsky/feed/defs.js";
-import { actor } from "./actor.ts";
-import { agent } from "./agent.ts";
+import { actor } from "./lib/actor.ts";
+import { agent } from "./lib/agent.ts";
 
 await agent.login({
   identifier: process.env.BSKY_IDENTIFIER || "",
