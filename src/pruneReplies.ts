@@ -32,6 +32,9 @@ do {
     }
 
     if (
+      (post.likeCount === 0 &&
+        post.replyCount === 0 &&
+        post.repostCount === 0) ||
       reply.root.$type !== "app.bsky.feed.defs#postView" ||
       reply.parent.$type !== "app.bsky.feed.defs#postView"
     ) {
