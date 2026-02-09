@@ -1,14 +1,17 @@
 const DRY_RUN = process.env.CONFIRM !== "y";
 
-// if (Math.random() < 0.3) {
-//   console.log("nah, i'm good");
-//   process.exit();
-// }
-
 import "dotenv/config";
 import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { agent } from "./lib/agent.ts";
+
+interface PostModule {
+  path: string;
+  module: {
+    shouldPublish?: (now: Date) => boolean;
+    publish: () => Promise<void>;
+  };
+}
 
 async function run() {
   await agent.login({
@@ -16,12 +19,13 @@ async function run() {
     password: process.env.BSKY_PASSWORD || "",
   });
 
-  interface PostModule {
-    path: string;
-    module: {
-      shouldPublish?: () => boolean;
-      publish: () => Promise<void>;
-    };
+  const now = new Date();
+
+  if (typeof process.argv[2] === "string") {
+    const filename = path.resolve(process.argv[2]);
+    const module = await import(filename);
+
+    return await publish({ path: filename, module });
   }
 
   const dirname = path.join(import.meta.dirname, "posts");
@@ -39,21 +43,30 @@ async function run() {
   );
 
   const ready = drafts.filter(
-    ({ module }) => !module.shouldPublish || module.shouldPublish(),
+    ({ module }) => !module.shouldPublish || module.shouldPublish(now),
   );
+
+  if (Math.random() * ready.length < 1) {
+    console.log("nah, i'm good");
+    return;
+  }
 
   const selected = ready[Math.floor(Math.random() * ready.length)];
 
-  if (!selected) {
+  if (selected) {
+    await publish(selected);
+  } else {
     console.log("nothing to post");
   }
+}
 
-  await selected.module.publish();
+async function publish({ path, module }: PostModule) {
+  await module.publish();
 
   if (DRY_RUN) {
-    console.log(`rm ${selected.path}`);
+    console.log(`rm ${path}`);
   } else {
-    await rm(selected.path);
+    await rm(path);
   }
 }
 
