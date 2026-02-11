@@ -1,9 +1,12 @@
-const DRY_RUN = process.env.CONFIRM !== "y";
-
 import "dotenv/config";
+
 import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { agent } from "./lib/agent.ts";
+import { isPostingHour, POSTING_HOURS, waitMinutes } from "./lib/functions.ts";
+
+const DRY_RUN = process.env.CONFIRM !== "y";
+const FORCE = process.env.FORCE === "y";
 
 interface PostModule {
   path: string;
@@ -14,12 +17,29 @@ interface PostModule {
 }
 
 async function run() {
+  if (process.env.WAIT === "y") {
+    await waitMinutes(0, 60);
+  }
+
+  const now = new Date();
+
+  if (!FORCE && !isPostingHour(now)) {
+    console.log("bad time");
+    return;
+  }
+
+  const dirname = path.join(import.meta.dirname, "posts");
+  const files = await readdir(dirname);
+
+  if (!FORCE && Math.random() >= files.length / 7 / POSTING_HOURS.size) {
+    console.log("nah, i'm good");
+    return;
+  }
+
   await agent.login({
     identifier: process.env.BSKY_IDENTIFIER || "",
     password: process.env.BSKY_PASSWORD || "",
   });
-
-  const now = new Date();
 
   if (typeof process.argv[2] === "string") {
     const filename = path.resolve(process.argv[2]);
@@ -27,9 +47,6 @@ async function run() {
 
     return await publish({ path: filename, module });
   }
-
-  const dirname = path.join(import.meta.dirname, "posts");
-  const files = await readdir(dirname);
 
   const drafts: PostModule[] = await Promise.all(
     files.map(async (f) => {
@@ -46,8 +63,8 @@ async function run() {
     ({ module }) => !module.shouldPublish || module.shouldPublish(now),
   );
 
-  if (Math.random() * ready.length < 1) {
-    console.log("nah, i'm good");
+  if (!FORCE && Math.random() * ready.length < 1) {
+    console.log("running low on drafts tbh");
     return;
   }
 
@@ -56,7 +73,7 @@ async function run() {
   if (selected) {
     await publish(selected);
   } else {
-    console.log("nothing to post");
+    console.log("nothing to post atm");
   }
 }
 

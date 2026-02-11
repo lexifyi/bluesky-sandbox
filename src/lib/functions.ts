@@ -3,6 +3,15 @@ import { agent } from "./agent.ts";
 
 const DRY_RUN = process.env.CONFIRM !== "y";
 const PEAK_HOURS = new Set([12, 13, 17, 18]);
+export const POSTING_HOURS = new Set([10, 11, 12, 13, 14, 17, 18, 19, 20, 21]);
+
+export function isPostingHour(now: Date) {
+  const check = new Date(now);
+
+  check.setUTCMinutes(check.getUTCMinutes() + 20);
+
+  return POSTING_HOURS.has(check.getHours());
+}
 
 export function isPeakHour(now: Date) {
   const check = new Date(now);
@@ -13,7 +22,7 @@ export function isPeakHour(now: Date) {
 }
 
 export function isEvening(now: Date) {
-  return now.getHours() >= 17 && now.getHours() < 21;
+  return now.getHours() >= 17 && now.getHours() < 20;
 }
 
 export function isNight(now: Date) {
@@ -21,7 +30,11 @@ export function isNight(now: Date) {
 }
 
 export async function waitShort() {
-  const delay = 1 + 4 * Math.random();
+  return waitMinutes(1, 5);
+}
+
+export async function waitMinutes(min: number, max: number) {
+  const delay = min + (max - min) * Math.random();
 
   console.log(`Waiting ${delay.toFixed(1)} mins…`);
 
