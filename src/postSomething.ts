@@ -31,7 +31,7 @@ async function run() {
   const dirname = path.join(import.meta.dirname, "posts");
   const files = await readdir(dirname);
 
-  if (!FORCE && Math.random() >= files.length / 7 / POSTING_HOURS.size) {
+  if (!FORCE && Math.random() < 1 - files.length / 7 / POSTING_HOURS.size) {
     console.log("nah, i'm good");
     return;
   }
@@ -62,11 +62,6 @@ async function run() {
   const ready = drafts.filter(
     ({ module }) => !module.shouldPublish || module.shouldPublish(now),
   );
-
-  if (!FORCE && Math.random() * (ready.length + 1) < 1) {
-    console.log("running low on drafts tbh");
-    return;
-  }
 
   const selected = ready[Math.floor(Math.random() * ready.length)];
 
