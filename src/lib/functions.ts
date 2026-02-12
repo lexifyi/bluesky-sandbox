@@ -7,11 +7,7 @@ export const POSTING_HOURS = new Set([
 ]);
 
 export function isPostingHour(now: Date) {
-  const check = new Date(now);
-
-  check.setUTCMinutes(check.getUTCMinutes() + 20);
-
-  return POSTING_HOURS.has(check.getHours());
+  return POSTING_HOURS.has(now.getHours());
 }
 
 export function isMorning(now: Date) {
