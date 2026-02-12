@@ -2,8 +2,9 @@ import type { AppBskyFeedPost } from "@atproto/api";
 import { agent } from "./agent.ts";
 
 const DRY_RUN = process.env.CONFIRM !== "y";
-const PEAK_HOURS = new Set([12, 13, 17, 18]);
-export const POSTING_HOURS = new Set([10, 11, 12, 13, 14, 17, 18, 19, 20, 21]);
+export const POSTING_HOURS = new Set([
+  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+]);
 
 export function isPostingHour(now: Date) {
   const check = new Date(now);
@@ -13,20 +14,37 @@ export function isPostingHour(now: Date) {
   return POSTING_HOURS.has(check.getHours());
 }
 
-export function isPeakHour(now: Date) {
-  const check = new Date(now);
+export function isMorning(now: Date) {
+  const hours = now.getHours();
+  return hours >= 10 && hours < 12;
+}
 
-  check.setUTCMinutes(check.getUTCMinutes() + 20);
-
-  return PEAK_HOURS.has(check.getHours());
+export function isDay(now: Date) {
+  const hours = now.getHours();
+  return hours >= 12 && hours < 17;
 }
 
 export function isEvening(now: Date) {
-  return now.getHours() >= 17 && now.getHours() < 20;
+  const hours = now.getHours();
+  return hours >= 17 && hours < 20;
 }
 
 export function isNight(now: Date) {
-  return now.getHours() >= 19;
+  const hours = now.getHours();
+  return hours >= 19 && hours < 22;
+}
+
+export function isNormalTime(now: Date) {
+  const hours = now.getHours();
+  return hours >= 11 && hours < 18;
+}
+
+export function isNormalNonWorkTime(now: Date) {
+  return isWeekend(now) ? isNormalTime(now) : isEvening(now);
+}
+
+export function isWeekend(now: Date) {
+  return now.getDay() >= 5;
 }
 
 export async function waitShort() {

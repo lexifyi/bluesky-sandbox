@@ -63,7 +63,7 @@ async function run() {
     ({ module }) => !module.shouldPublish || module.shouldPublish(now),
   );
 
-  if (!FORCE && Math.random() * ready.length < 1) {
+  if (!FORCE && Math.random() * (ready.length + 1) < 1) {
     console.log("running low on drafts tbh");
     return;
   }
