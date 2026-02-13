@@ -31,7 +31,7 @@ async function run() {
   const dirname = path.join(import.meta.dirname, "posts");
   const files = await readdir(dirname);
 
-  if (!FORCE && Math.random() < 1 - files.length / 7 / POSTING_HOURS.size) {
+  if (!FORCE && Math.random() > files.length / 7 / POSTING_HOURS.size) {
     console.log("nah, i'm good");
     return;
   }

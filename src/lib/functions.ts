@@ -40,7 +40,8 @@ export function isNormalNonWorkTime(now: Date) {
 }
 
 export function isWeekend(now: Date) {
-  return now.getDay() >= 5;
+  const day = now.getDay();
+  return day === 0 || day === 6;
 }
 
 export async function waitShort() {
