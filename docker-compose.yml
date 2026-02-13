@@ -2,7 +2,7 @@ services:
   main:
     image: node
     entrypoint: ["/bin/bash", "-c"]
-    command: ["cd /app && node src/helloWorldFeed.ts"]
+    command: ["cd /app && node src/sortedFollowingFeed.ts"]
     restart: unless-stopped
     ports:
       - 9396:9396
