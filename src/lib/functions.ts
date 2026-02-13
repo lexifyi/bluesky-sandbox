@@ -2,9 +2,7 @@ import type { AppBskyFeedPost } from "@atproto/api";
 import { agent } from "./agent.ts";
 
 const DRY_RUN = process.env.CONFIRM !== "y";
-export const POSTING_HOURS = new Set([
-  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-]);
+export const POSTING_HOURS = new Set([10, 11, 12, 13, 14, 17, 18, 19, 20, 21]);
 
 export function isPostingHour(now: Date) {
   return POSTING_HOURS.has(now.getHours());
