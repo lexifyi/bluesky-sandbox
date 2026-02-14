@@ -5,13 +5,6 @@ import express from "express";
 import morgan from "morgan";
 import { agent } from "./lib/agent.ts";
 
-console.log("Logging in…");
-
-await agent.login({
-  identifier: process.env.BSKY_IDENTIFIER || "",
-  password: process.env.BSKY_PASSWORD || "",
-});
-
 interface FeedEntry {
   uri: string;
   time: number;

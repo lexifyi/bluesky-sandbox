@@ -4,11 +4,6 @@ import type { PostView } from "@atproto/api/dist/client/types/app/bsky/feed/defs
 import { actor } from "./lib/actor.ts";
 import { agent } from "./lib/agent.ts";
 
-await agent.login({
-  identifier: process.env.BSKY_IDENTIFIER || "",
-  password: process.env.BSKY_PASSWORD || "",
-});
-
 await actor.mutuals.load();
 
 const knownAccounts = new Set([agent.did!]);

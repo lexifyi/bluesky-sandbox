@@ -2,7 +2,6 @@ import "dotenv/config";
 
 import { readdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { agent } from "./lib/agent.ts";
 import { isPostingHour, POSTING_HOURS, waitMinutes } from "./lib/functions.ts";
 
 const DRY_RUN = process.env.CONFIRM !== "y";
@@ -35,11 +34,6 @@ async function run() {
     console.log("nah, i'm good");
     return;
   }
-
-  await agent.login({
-    identifier: process.env.BSKY_IDENTIFIER || "",
-    password: process.env.BSKY_PASSWORD || "",
-  });
 
   if (typeof process.argv[2] === "string") {
     const filename = path.resolve(process.argv[2]);

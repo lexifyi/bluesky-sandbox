@@ -19,11 +19,6 @@ let sorted: Array<{ score: number; post: FeedViewPost }> = [];
 async function refresh() {
   console.log("Refreshing posts…");
 
-  await agent.login({
-    identifier: process.env.BSKY_IDENTIFIER || "",
-    password: process.env.BSKY_PASSWORD || "",
-  });
-
   await actor.mutuals.load();
 
   const posts: FeedViewPost[] = [];

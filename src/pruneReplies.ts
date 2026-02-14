@@ -2,11 +2,6 @@ import "dotenv/config";
 
 import { agent } from "./lib/agent.ts";
 
-await agent.login({
-  identifier: process.env.BSKY_IDENTIFIER || "",
-  password: process.env.BSKY_PASSWORD || "",
-});
-
 let cursor: string | undefined;
 let count = 0;
 const cutoff = new Date();

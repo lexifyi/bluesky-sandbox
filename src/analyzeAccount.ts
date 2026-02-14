@@ -12,11 +12,6 @@ import type {
 } from "@atproto/api/dist/client/types/app/bsky/feed/defs.js";
 import { agent } from "./lib/agent.ts";
 
-await agent.login({
-  identifier: process.env.BSKY_IDENTIFIER || "",
-  password: process.env.BSKY_PASSWORD || "",
-});
-
 let handle = process.argv[2];
 
 if (!handle.includes(".")) {

@@ -9,17 +9,12 @@ interface Entry {
   count: number;
 }
 
-await agent.login({
-  identifier: process.env.BSKY_IDENTIFIER || "",
-  password: process.env.BSKY_PASSWORD || "",
-});
-
 await actor.follows.load();
 
 const entries = new Map<string, Entry>();
 const cutoff = new Date();
 
-cutoff.setDate(cutoff.getDate() - 21);
+cutoff.setDate(cutoff.getDate() - 15);
 
 for (const { did, handle } of actor.follows.list) {
   entries.set(did, { did, handle, count: 0 });

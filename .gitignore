@@ -1,6 +1,7 @@
 /.env
 /active.bin
 /active.log
-/node_modules/
 /drafts/
+/node_modules/
+/session.json
 /src/posts/
