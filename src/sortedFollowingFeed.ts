@@ -46,7 +46,7 @@ async function refresh() {
         continue;
       }
 
-      if (post.reply && (post.post.likeCount ?? 0) < 4) {
+      if (post.reply && (post.post.likeCount ?? 0) < 5) {
         continue;
       }
 
@@ -73,7 +73,7 @@ async function refresh() {
 await refresh();
 
 function scoreOfPost(now: Date, { post, reason }: FeedViewPost): number {
-  let score = Math.max(post.likeCount ?? 0, 5);
+  let score = Math.sqrt((post.likeCount ?? 0) + 5);
 
   const indexedAt = new Date(
     isReasonRepost(reason) ? reason.indexedAt : post.indexedAt,
@@ -81,12 +81,8 @@ function scoreOfPost(now: Date, { post, reason }: FeedViewPost): number {
 
   const age = now.valueOf() - indexedAt.valueOf();
 
-  if (!actor.followers.containsDID(post.author.did)) {
-    score /= 3;
-  }
-
   if (!actor.follows.containsDID(post.author.did)) {
-    score /= 3;
+    score = Math.sqrt(score);
   }
 
   return score / Math.pow(2, age / DECAY_PERIOD);
@@ -140,9 +136,7 @@ app.get("/xrpc/app.bsky.feed.getFeedSkeleton", (req, res) => {
   res.json({
     feed: sorted
       .values()
-      .filter(
-        ({ score, post: { post, reply } }) => score >= 1 && !seen.has(post.uri),
-      )
+      .filter(({ post: { post } }) => !seen.has(post.uri))
       .take(limit)
       .map(({ post }) => {
         const item: SkeletonFeedPost = {
